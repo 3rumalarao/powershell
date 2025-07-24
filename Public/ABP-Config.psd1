@@ -21,4 +21,23 @@
         TaxData        = "D:\Program Files (x86)\ABP\TaxData"
         Taxeleclookup  = "D:\Program Files (x86)\ABP\Taxeleclookup"
     }
+
+
+    BoltServers = @{
+        'BTServerp34' = @{
+            DestinationPaths = @('c$\Windows\SysWOW64\TaxData')
+            ZCUtilPath       = 'C:\Windows\SysWOW64\TaxData\ZCUtil_2.4.1.4'
+        }
+        'BTServerp36' = @{
+            DestinationPaths = @('c$\Windows\SysWOW64\TaxData')
+            ZCUtilPath       = 'C:\Windows\SysWOW64\TaxData\ZCUtil_2.4.1.4'
+        }
+        'BTServerp005' = @{
+            DestinationPaths = @(
+                'c$\Windows\SysWOW64\TaxData',
+                'd$\Program Files (x86)\ABP\TaxData'
+            )
+            ZCUtilPath       = 'C:\Windows\SysWOW64\TaxData\ZCUtil_2.4.1.4'
+        }
+    }
 }
