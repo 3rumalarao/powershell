@@ -1,0 +1,32 @@
+Prerequisites
+PowerShell Console: You will need a PowerShell terminal.
+Administrator Privileges: Because your script performs system-level tasks like stopping/starting services, creating folders in the root of D:\, and accessing administrative shares (\\server\d$), you must run PowerShell as an Administrator.
+Execution Steps
+Open PowerShell as Administrator
+
+Click the Start menu.
+Type PowerShell.
+Right-click on Windows PowerShell and select Run as administrator.
+Navigate to the Script Directory
+
+In the PowerShell window, change the directory to where your module is located using the cd command.
+powershell
+cd c:\Users\itsme\Downloads\ABPDeployment_Module
+Set the Execution Policy (for this session only)
+
+To allow your local script to run, you may need to adjust the execution policy. The safest way to do this is to bypass it just for the current PowerShell session. This command does not permanently change your system's security settings.
+powershell
+Set-ExecutionPolicy -ExecutionPolicy Bypass -Scope Process
+Run the Deployment Script
+
+Now, you can execute the main controller script.
+powershell
+.\Run-ABPDeployment.ps1
+
+What to Expect When You Run It
+Credential Prompt: The very first thing you will see is a pop-up window asking for a username and password. This is triggered by the Get-Credential command. Enter the credentials for an account that has administrative rights on all the servers (Serverp21, Serverp22, etc.).
+Pre-Flight Checks: The script will immediately run the "Step 0: Pre-flight Checks" to ensure all servers are online and required paths exist. If any of these checks fail, the script will stop and instruct you to fix the issues.
+Step-by-Step Execution: If the checks pass, the script will ask you to press Enter to begin the deployment. It will then proceed through each step (Step 1, Step 2, etc.), printing status messages to the console.
+Manual Step Pauses: When the script reaches a manual step (like Step 5: Show-ZipProductManager), it will display the instructions and pause, waiting for you to press Enter before continuing.
+Final Summary: Once all steps are complete, it will display the final summary report, showing the number of successes, warnings, and errors, along with the total execution time.
+You have built a very interactive and informative script, and following these steps will allow you to run it successfully.
