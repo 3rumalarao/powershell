@@ -646,3 +646,87 @@ function Show-SummaryReport {
         Write-Log -Message "Deployment finished successfully." -LogFilePath $LogFilePath -Level "SUCCESS"
     }
 }
+
+
+function Copy-BoltConfigsToTargets {
+    param (
+        [hashtable]$BoltServers,
+        [string]$BackupRoot,
+        [string]$CurrentMonth,
+        [string]$Year,
+        [string]$LogFilePath
+    )
+
+    Write-Log -Message "Starting Step 14: Copying updated configs to Bolt Servers..." -LogFilePath $LogFilePath
+
+    $sourcePath = Join-Path -Path $BackupRoot -ChildPath "TaxFileupdate_${CurrentMonth}${Year}\${CurrentMonth}\TaxData"
+
+    foreach ($server in $BoltServers.Keys) {
+        $destPaths = $BoltServers[$server].DestinationPaths
+
+        foreach ($dest in $destPaths) {
+            Write-Log -Message "Copying configs to $server → $dest" -LogFilePath $LogFilePath
+            try {
+                $fullDestPath = "\\$server\$dest"
+                if (-Not (Test-Path $fullDestPath)) {
+                    New-Item -Path $fullDestPath -ItemType Directory -Force | Out-Null
+                }
+
+                Copy-Item -Path "$sourcePath\*.txt" -Destination $fullDestPath -Recurse -Force -ErrorAction Stop
+                Write-Log -Message "Copied files to ${server}:$fullDestPath successfully." -LogFilePath $LogFilePath
+            }
+            catch {
+                Write-Log -Message "❌ Failed to copy files to ${server}:$fullDestPath. Error: $_" -LogFilePath $LogFilePath
+                throw
+            }
+        }
+    }
+
+    Write-Log -Message "Completed Step 14: Bolt config distribution." -LogFilePath $LogFilePath
+}
+
+
+function Show-ZCUtilBoltInstructions {
+    param (
+        [string]$ServerName,
+        [string]$ZCUtilPath,
+        [string]$LogFilePath
+    )
+
+    Show-ManualStep -ServerName $ServerName -Title "Execute ZCUTIL on Bolt Server" -Instructions @(
+        "1. Log in to $ServerName",
+        "2. Navigate to: $ZCUtilPath",
+        "3. Right-click on ZCUtil.exe and select 'Run as Administrator'",
+        "4. Enter credentials (admin/admin) if prompted",
+        "5. In the window, go to 'Utilities' → click 'Update'",
+        "6. Wait until the update completes and window can be closed"
+    )
+
+    Write-Log -Message "Displayed ZCUTIL instructions for Bolt server: $ServerName" -LogFilePath $LogFilePath
+    Confirm-Step
+}
+
+
+function Test-BoltServiceRunning {
+    param (
+        [string]$ServerName,
+        [string]$ServiceName,
+        [string]$LogFilePath
+    )
+
+    Write-Log -Message "Checking service '$ServiceName' on $ServerName..." -LogFilePath $LogFilePath
+
+    try {
+        $service = Get-Service -ComputerName $ServerName -Name $ServiceName -ErrorAction Stop
+        if ($service.Status -eq 'Running') {
+            Write-Log -Message "✅ Service '$ServiceName' is running on $ServerName." -LogFilePath $LogFilePath
+        } else {
+            Write-Log -Message "❌ Service '$ServiceName' is NOT running on $ServerName. Status: $($service.Status)" -LogFilePath $LogFilePath
+        }
+    }
+    catch {
+        Write-Log -Message "❌ Failed to check service '$ServiceName' on $ServerName. Error: $_" -LogFilePath $LogFilePath
+    }
+
+    Confirm-Step
+}
