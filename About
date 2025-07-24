@@ -1,0 +1,107 @@
+# ABP Monthly Deployment Automation
+
+This project is a PowerShell module designed to automate the recurring monthly tax file update process for the ABP application. It provides a standardized, repeatable, and logged workflow to ensure deployments are performed consistently and with minimal manual error.
+
+## Features
+
+- **Configuration-Driven**: All server names, paths, and service details are managed in a central configuration file, eliminating hard-coded values from the script logic.
+- **Pre-Flight Validation**: Before making any changes, the script performs checks to ensure all target servers are online and required paths are accessible.
+- **Automated Service Control**: Reliably stops and starts the ABP services on all required servers in the correct sequence.
+- **Automated Backups**: Automatically creates a versioned backup of the existing configuration files before any updates are applied.
+- **Interactive Manual Steps**: For tasks that must be performed through a GUI, the script pauses and provides clear, on-screen instructions to the operator.
+- **Detailed Logging & Reporting**: Every action is logged to a timestamped file. A final summary report is displayed upon completion, highlighting successes, warnings, and errors.
+- **Modular Codebase**: The project is structured as a proper PowerShell module, separating the controller logic, step functions, and helper utilities for high maintainability.
+
+---
+
+## Prerequisites
+
+- **Windows PowerShell**: Version 5.1 or higher.
+- **Administrator Privileges**: The script must be run from a PowerShell session that is "Run as administrator".
+- **Network Connectivity**: The machine running the script must have network access to all servers defined in the configuration.
+- **Permissions**: The credentials used to run the script must have administrative rights on all target servers to manage services and copy files.
+
+---
+
+## Configuration
+
+All environment-specific settings are managed in the `Public\ABP-Config.psd1` file. Before running the deployment, ensure these values are correct for your environment.
+
+| Key                | Description                                                                                             |
+| ------------------ | ------------------------------------------------------------------------------------------------------- |
+| `PrimaryServer`    | The hostname of the primary ABP server where initial updates are performed.                             |
+| `TargetServers`    | An array of hostnames for the secondary/target servers that receive the updated configuration.          |
+| `ABPServiceName`   | The exact name of the ABP Windows service (e.g., "ABP Server").                                         |
+| `ExpectedProcess`  | A hashtable defining the process name and description to validate that the application has fully stopped. |
+| `ApplicationPaths` | A hashtable of the core application folder paths. Used as the source for backups and destination for file copies. |
+| `ZCUtilPath`       | The full path to the directory containing the `ZCUtil.exe` tool.                                        |
+| `PORConsolePath`   | The full path to the directory containing the `PORTaxRatesConsole.exe` tool.                              |
+| `PORConsoleServer` | The specific server where the POR Console manual task must be performed.                                |
+| `BackupRoot`       | The root directory on the local machine where monthly backup folders will be created.                   |
+| `LogFileRoot`      | The root directory on the local machine where the deployment log files will be saved.                   |
+
+---
+
+## How to Run
+
+1.  **Open PowerShell as Administrator**.
+    - Click the Start Menu, type `PowerShell`, right-click on "Windows PowerShell", and select "Run as administrator".
+
+2.  **Navigate to the Project Directory**.
+    ```powershell
+    cd c:\Users\itsme\Downloads\ABPDeployment_Module
+    ```
+
+3.  **Set the Execution Policy (for the current session)**.
+    - This command safely allows the script to run without changing system-wide settings.
+    ```powershell
+    Set-ExecutionPolicy -ExecutionPolicy Bypass -Scope Process
+    ```
+
+4.  **Execute the Controller Script**.
+    ```powershell
+    .\Run-ABPDeployment.ps1
+    ```
+
+5.  **Follow the On-Screen Prompts**.
+    - The script will first ask for credentials.
+    - It will then perform pre-flight checks and pause for confirmation.
+    - It will guide you through each automated and manual step of the deployment.
+
+---
+
+## Project Structure
+
+```
+ABPDeployment_Module/
+├── Public/
+│   ├── ABP-Config.psd1         # Environment configuration
+│   └── ABP-Functions.ps1       # All major step functions (Stop-ABP, Backup-Config, etc.)
+├── Private/
+│   └── ABP-Helpers.ps1         # Reusable helpers (Write-Log, Confirm-Step, etc.)
+├── ABPDeployment.psm1          # Module manifest; loads all .ps1 files
+├── Run-ABPDeployment.ps1       # The main controller script to execute the deployment
+└── README.md                   # This file
+```
+
+---
+
+## Deployment Workflow
+
+The script executes the following high-level steps in sequence:
+
+- **Step 0: Pre-Flight Checks** - Validates server connectivity and path existence.
+- **Step 1: Stop Primary Service** - Stops the ABP service on the primary server.
+- **Step 2: Validate Service Stopped** - Confirms the service and associated processes are no longer running.
+- **Step 3: Create Backup Folders** - Creates the directory structure for the current month's backup.
+- **Step 4: Backup Pre-Update Configs** - Copies the original config files to the backup folder.
+- **Step 5: Manual - ZipProductManager** - Pauses and instructs the user to run the GUI update tool.
+- **Step 6: Manual - ZCUtil on Primary** - Pauses and instructs the user to run the ZCUtil tool.
+- **Step 7: Backup Post-Update Configs** - Copies the newly updated config files to the backup folder.
+- **Step 8: Distribute Configs** - Pushes the new config files to all target servers.
+- **Step 9: Stop Target Services** - Stops the ABP service on all target servers.
+- **Step 10: Manual - ZCUtil on Targets** - Guides the user through running ZCUtil on each target server.
+- **Step 11: Manual - POR Console** - Pauses and instructs the user to run the POR console tool.
+- **Step 12: Start All Services** - Starts the ABP service on the primary and all target servers.
+- **Step 13: Summary Report** - Displays a final report of all actions, timings, and any errors.
+
