@@ -108,3 +108,37 @@ if ($checksPassed) {
     # Show summary of errors found during pre-flight
     Show-SummaryReport @commonParams
 }
+
+
+# ════════════════════════════════════════════════
+# STEP 14 - Copy Configs to Bolt Servers
+# ════════════════════════════════════════════════
+Write-Log -Message "STEP 14: Copying config files to Bolt Servers..." -LogFilePath $logFile
+Copy-BoltConfigsToTargets -BoltServers $config.BoltServers `
+                          -BackupRoot $config.BackupRoot `
+                          -CurrentMonth $CurrentMonth `
+                          -Year $Year `
+                          -LogFilePath $logFile
+Confirm-Step
+
+# ════════════════════════════════════════════════
+# STEP 15 - Manual: Run ZCUTIL on each Bolt Server
+# ════════════════════════════════════════════════
+Write-Log -Message "STEP 15: Manual GUI ZCUTIL execution on Bolt Servers..." -LogFilePath $logFile
+foreach ($bolt in $config.BoltServers.Keys) {
+    Show-ZCUtilBoltInstructions -ServerName $bolt `
+                                -ZCUtilPath $config.BoltServers[$bolt].ZCUtilPath `
+                                -LogFilePath $logFile
+}
+Confirm-Step
+
+# ════════════════════════════════════════════════
+# STEP 16 - Validate Excelergy ABP Service Running on Bolt Servers
+# ════════════════════════════════════════════════
+Write-Log -Message "STEP 16: Validating ABP service on Bolt Servers..." -LogFilePath $logFile
+foreach ($bolt in $config.BoltServers.Keys) {
+    Test-BoltServiceRunning -ServerName $bolt `
+                            -ServiceName $config.ABPServiceName `
+                            -LogFilePath $logFile
+}
+Confirm-Step
